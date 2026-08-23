@@ -840,6 +840,7 @@ function renderizarConfiguracion(contenedor) {
 }
 
 function renderizarChat(contenedor) {
+  contenedor.classList.add("slide--chat");
   contenedor.appendChild(crearElemento("div", "slide__index", "02 / Chat"));
   contenedor.appendChild(crearElemento("h1", "", "Responde a tus clientes."));
   contenedor.appendChild(crearElemento("p", "slide__intro", "Centraliza las conversaciones de WhatsApp en tu espacio comercial."));
