@@ -6,6 +6,7 @@ const STORAGE_KEY = "crm_usuarios";
 const SESSION_KEY = "crm_sesion";
 const CLIENTES_KEY = "crm_clientes";
 const WHATSAPP_CONFIG_KEY = "crm_whatsapp_config";
+const WHATSAPP_MESSAGES_KEY = "crm_whatsapp_messages";
 
 // Carga los usuarios desde el almacenamiento local
 function cargarUsuarios() {
@@ -97,6 +98,18 @@ function guardarConfigWhatsApp(configuracion) {
   localStorage.setItem(WHATSAPP_CONFIG_KEY, JSON.stringify(configuracion));
 }
 
+function cargarMensajesWhatsApp() {
+  try {
+    return JSON.parse(localStorage.getItem(WHATSAPP_MESSAGES_KEY)) || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function guardarMensajesWhatsApp(mensajes) {
+  localStorage.setItem(WHATSAPP_MESSAGES_KEY, JSON.stringify(mensajes));
+}
+
 // Usuarios disponibles para login y registro
 const usuarios = cargarUsuarios();
 usuarios.forEach((usuario) => {
@@ -112,6 +125,8 @@ if (usuarioActual && !usuarioActual.role) {
 // Lista de clientes del CRM
 let clientes = cargarClientes();
 let configuracionWhatsApp = cargarConfigWhatsApp();
+let mensajesWhatsApp = cargarMensajesWhatsApp();
+let clienteChatId = clientes[0]?.id || null;
 
 // Guarda el ID del cliente que se está editando
 let clienteEditandoId = null;
@@ -442,10 +457,10 @@ function renderizarCRM2() {
   sidebar.appendChild(crearElemento("p", "sidebar__eyebrow", "Espacio de trabajo"));
 
   const navegacion = crearElemento("nav", "nav");
-  const itemsNavegacion = [["resumen", "Resumen", "01"], ["clientes", "Clientes", String(clientes.length).padStart(2, "0")]];
-  if (usuarioActual.role === "admin") itemsNavegacion.push(["users", "Users", "03"]);
-  if (usuarioActual.role === "admin") itemsNavegacion.push(["config", "Config", "04"]);
-  itemsNavegacion.push(["perfil", "Mi perfil", usuarioActual.role === "admin" ? "05" : "04"]);
+  const itemsNavegacion = [["resumen", "Resumen", "01"], ["chat", "Chat", "02"], ["clientes", "Clientes", String(clientes.length).padStart(2, "0")]];
+  if (usuarioActual.role === "admin") itemsNavegacion.push(["users", "Users", "04"]);
+  if (usuarioActual.role === "admin") itemsNavegacion.push(["config", "Config", "05"]);
+  itemsNavegacion.push(["perfil", "Mi perfil", usuarioActual.role === "admin" ? "06" : "05"]);
   itemsNavegacion.forEach(([id, texto, numero]) => {
     const boton = crearElemento("button", `nav__item${slideActual === id ? " nav__item--active" : ""}`);
     boton.type = "button";
@@ -533,6 +548,8 @@ function renderizarCRM2() {
     actividad.appendChild(crearElemento("p", "", alta ? `${alta} cliente${alta === 1 ? " necesita" : "s necesitan"} seguimiento prioritario.` : "Añade un cliente para comenzar a ordenar tu proceso comercial."));
     resumenGrid.appendChild(actividad);
     slide.appendChild(resumenGrid);
+  } else if (slideActual === "chat") {
+    renderizarChat(slide);
   } else if (slideActual === "users" && usuarioActual.role === "admin") {
     renderizarUsuarios(slide);
   } else if (slideActual === "config" && usuarioActual.role === "admin") {
@@ -820,6 +837,63 @@ function renderizarConfiguracion(contenedor) {
     message.textContent = "Configuración guardada en este dispositivo.";
   });
   panel.appendChild(form); panel.appendChild(message); contenedor.appendChild(panel);
+}
+
+function renderizarChat(contenedor) {
+  contenedor.appendChild(crearElemento("div", "slide__index", "02 / Chat"));
+  contenedor.appendChild(crearElemento("h1", "", "Responde a tus clientes."));
+  contenedor.appendChild(crearElemento("p", "slide__intro", "Centraliza las conversaciones de WhatsApp en tu espacio comercial."));
+  const chat = crearElemento("section", "chat-layout");
+  const contacts = crearElemento("div", "chat-contacts");
+  contacts.appendChild(crearElemento("h2", "", "Conversaciones"));
+  clientes.forEach((cliente) => {
+    const contact = crearElemento("button", `chat-contact${cliente.id === clienteChatId ? " chat-contact--active" : ""}`);
+    contact.type = "button";
+    contact.appendChild(crearElemento("span", "chat-contact__avatar", cliente.nombre.charAt(0).toUpperCase()));
+    const copy = crearElemento("span", "chat-contact__copy");
+    copy.appendChild(crearElemento("strong", "", cliente.nombre));
+    copy.appendChild(crearElemento("small", "", cliente.telefono || cliente.email));
+    contact.appendChild(copy);
+    contact.addEventListener("click", () => { clienteChatId = cliente.id; renderizar(); });
+    contacts.appendChild(contact);
+  });
+  chat.appendChild(contacts);
+  const cliente = clientes.find((actual) => actual.id === clienteChatId) || clientes[0];
+  const conversation = crearElemento("div", "conversation");
+  if (!cliente) {
+    conversation.appendChild(crearElemento("p", "mensaje", "Añade un cliente para comenzar una conversación."));
+  } else {
+    const conversationHeader = crearElemento("header", "conversation__header");
+    conversationHeader.appendChild(crearElemento("strong", "", cliente.nombre));
+    conversationHeader.appendChild(crearElemento("span", "", `${cliente.empresa} · WhatsApp`));
+    conversation.appendChild(conversationHeader);
+    const messages = crearElemento("div", "messages");
+    (mensajesWhatsApp[cliente.id] || []).forEach((mensaje) => {
+      const bubble = crearElemento("div", `message message--${mensaje.from === "me" ? "out" : "in"}`, mensaje.text);
+      bubble.appendChild(crearElemento("small", "", mensaje.time));
+      messages.appendChild(bubble);
+    });
+    if (!messages.children.length) messages.appendChild(crearElemento("p", "chat-empty", "Aún no hay mensajes. Escribe el primero."));
+    conversation.appendChild(messages);
+    const composer = crearElemento("form", "composer");
+    const input = document.createElement("input");
+    input.name = "message"; input.placeholder = "Escribe una respuesta..."; input.required = true; input.autocomplete = "off";
+    const send = crearElemento("button", "btn btn--primary", "Enviar");
+    send.type = "submit";
+    composer.appendChild(input); composer.appendChild(send);
+    composer.addEventListener("submit", async (evento) => {
+      evento.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      if (!mensajesWhatsApp[cliente.id]) mensajesWhatsApp[cliente.id] = [];
+      mensajesWhatsApp[cliente.id].push({ from: "me", text, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) });
+      guardarMensajesWhatsApp(mensajesWhatsApp);
+      if (window.HwarsCRM?.sendWhatsAppMessage) await window.HwarsCRM.sendWhatsAppMessage(cliente, text);
+      renderizar();
+    });
+    conversation.appendChild(composer);
+  }
+  chat.appendChild(conversation); contenedor.appendChild(chat);
 }
 
 function actualizarApariencia(cambios) {

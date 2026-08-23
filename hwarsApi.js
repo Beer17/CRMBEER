@@ -119,9 +119,34 @@
     }
   }
 
+  async function sendWhatsAppMessage(cliente = {}, text = "") {
+    let whatsappConfig = {};
+    try {
+      whatsappConfig = JSON.parse(localStorage.getItem("crm_whatsapp_config")) || {};
+    } catch (error) {
+      return { ok: false, source: "local" };
+    }
+    if (!whatsappConfig.enabled || !whatsappConfig.apiUrl || !cliente.telefono) {
+      return { ok: true, source: "local" };
+    }
+    try {
+      const response = await fetch(`${whatsappConfig.apiUrl.replace(/\/$/, "")}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumberId: whatsappConfig.phoneNumberId, to: cliente.telefono, message: text })
+      });
+      if (!response.ok) throw new Error(`WhatsApp backend respondió con ${response.status}`);
+      return { ok: true, source: "whatsapp", payload: await response.json() };
+    } catch (error) {
+      console.warn("No se pudo enviar el mensaje de WhatsApp.", error);
+      return { ok: false, source: "local" };
+    }
+  }
+
   window.HwarsCRM = {
     analyzeClient,
     saveClient,
+    sendWhatsAppMessage,
     fallbackAnalyzeClient
   };
 })();
