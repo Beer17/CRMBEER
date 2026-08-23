@@ -7,6 +7,8 @@ const SESSION_KEY = "crm_sesion";
 const CLIENTES_KEY = "crm_clientes";
 const WHATSAPP_CONFIG_KEY = "crm_whatsapp_config";
 const WHATSAPP_MESSAGES_KEY = "crm_whatsapp_messages";
+const REPORTS_KEY = "crm_reportes";
+const FILES_KEY = "crm_archivos";
 
 // Carga los usuarios desde el almacenamiento local
 function cargarUsuarios() {
@@ -110,6 +112,18 @@ function guardarMensajesWhatsApp(mensajes) {
   localStorage.setItem(WHATSAPP_MESSAGES_KEY, JSON.stringify(mensajes));
 }
 
+function cargarColeccion(clave) {
+  try {
+    return JSON.parse(localStorage.getItem(clave)) || [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function guardarColeccion(clave, coleccion) {
+  localStorage.setItem(clave, JSON.stringify(coleccion));
+}
+
 // Usuarios disponibles para login y registro
 const usuarios = cargarUsuarios();
 usuarios.forEach((usuario) => {
@@ -127,6 +141,8 @@ let clientes = cargarClientes();
 let configuracionWhatsApp = cargarConfigWhatsApp();
 let mensajesWhatsApp = cargarMensajesWhatsApp();
 let clienteChatId = clientes[0]?.id || null;
+let reportes = cargarColeccion(REPORTS_KEY);
+let archivos = cargarColeccion(FILES_KEY);
 
 // Guarda el ID del cliente que se está editando
 let clienteEditandoId = null;
@@ -463,10 +479,10 @@ function renderizarCRM2() {
   sidebar.appendChild(crearElemento("p", "sidebar__eyebrow", "Espacio de trabajo"));
 
   const navegacion = crearElemento("nav", "nav");
-  const itemsNavegacion = [["resumen", "Resumen", "01"], ["chat", "Chat", "02"], ["clientes", "Clientes", String(clientes.length).padStart(2, "0")]];
-  if (usuarioActual.role === "admin") itemsNavegacion.push(["users", "Users", "04"]);
-  if (usuarioActual.role === "admin") itemsNavegacion.push(["config", "Config", "05"]);
-  itemsNavegacion.push(["perfil", "Mi perfil", usuarioActual.role === "admin" ? "06" : "05"]);
+  const itemsNavegacion = [["resumen", "Resumen", "01"], ["chat", "Chat", "02"], ["clientes", "Clientes", String(clientes.length).padStart(2, "0")], ["reportes", "Reportes", String(reportes.length).padStart(2, "0")], ["archivos", "Archivos", String(archivos.length).padStart(2, "0")]];
+  if (usuarioActual.role === "admin") itemsNavegacion.push(["users", "Users", "06"]);
+  if (usuarioActual.role === "admin") itemsNavegacion.push(["config", "Config", "07"]);
+  itemsNavegacion.push(["perfil", "Mi perfil", usuarioActual.role === "admin" ? "08" : "06"]);
   itemsNavegacion.forEach(([id, texto, numero]) => {
     const boton = crearElemento("button", `nav__item${slideActual === id ? " nav__item--active" : ""}`);
     boton.type = "button";
@@ -556,6 +572,10 @@ function renderizarCRM2() {
     slide.appendChild(resumenGrid);
   } else if (slideActual === "chat") {
     renderizarChat(slide);
+  } else if (slideActual === "reportes") {
+    renderizarReportes(slide);
+  } else if (slideActual === "archivos") {
+    renderizarArchivos(slide);
   } else if (slideActual === "users" && usuarioActual.role === "admin") {
     renderizarUsuarios(slide);
   } else if (slideActual === "config" && usuarioActual.role === "admin") {
@@ -843,6 +863,99 @@ function renderizarConfiguracion(contenedor) {
     message.textContent = "Configuración guardada en este dispositivo.";
   });
   panel.appendChild(form); panel.appendChild(message); contenedor.appendChild(panel);
+}
+
+function renderizarReportes(contenedor) {
+  contenedor.appendChild(crearElemento("div", "slide__index", "04 / Reportes"));
+  contenedor.appendChild(crearElemento("h1", "", "Mide el avance comercial."));
+  contenedor.appendChild(crearElemento("p", "slide__intro", "Carga reportes de ventas para mantener al equipo alineado."));
+  const form = crearElemento("form", "formulario report-form");
+  [["Título del reporte", "titulo", "text", "Reporte semanal de ventas"], ["Periodo", "periodo", "text", "Ej. 19 - 23 agosto"], ["Ventas cerradas", "ventas", "number", "0"], ["Valor generado", "valor", "text", "$ 0.00"], ["Resumen y próximos pasos", "resumen", "textarea", "Resultados, bloqueos y siguiente acción..."]].forEach(([labelText, name, type, placeholder]) => {
+    const field = crearElemento("div", name === "resumen" ? "campo campo--full" : "campo");
+    field.appendChild(crearElemento("label", "campo__label", labelText));
+    const input = type === "textarea" ? document.createElement("textarea") : document.createElement("input");
+    input.name = name; input.type = type === "textarea" ? undefined : type; input.placeholder = placeholder; input.required = true;
+    field.appendChild(input); form.appendChild(field);
+  });
+  const submit = crearElemento("button", "btn btn--primary report-form__button", "Guardar reporte");
+  submit.type = "submit"; form.appendChild(submit);
+  const message = crearElemento("p", "mensaje", "");
+  form.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+    const datos = new FormData(form);
+    reportes.unshift({ id: Date.now(), titulo: datos.get("titulo").toString(), periodo: datos.get("periodo").toString(), ventas: datos.get("ventas").toString(), valor: datos.get("valor").toString(), resumen: datos.get("resumen").toString(), autor: usuarioActual.nombre, fecha: new Date().toLocaleDateString() });
+    guardarColeccion(REPORTS_KEY, reportes); form.reset(); message.textContent = "Reporte guardado correctamente."; renderizar();
+  });
+  contenedor.appendChild(form); contenedor.appendChild(message);
+  const lista = crearElemento("div", "report-list");
+  lista.appendChild(crearElemento("h2", "lista__title", "Reportes recientes"));
+  reportes.forEach((reporte) => {
+    const item = crearElemento("article", "report-item");
+    const copy = crearElemento("div", "report-item__copy");
+    copy.appendChild(crearElemento("strong", "", reporte.titulo));
+    copy.appendChild(crearElemento("span", "", `${reporte.periodo} · ${reporte.autor}`));
+    copy.appendChild(crearElemento("p", "", reporte.resumen));
+    item.appendChild(copy);
+    const data = crearElemento("div", "report-item__data");
+    data.appendChild(crearElemento("strong", "", reporte.ventas));
+    data.appendChild(crearElemento("span", "", "ventas"));
+    data.appendChild(crearElemento("small", "", reporte.valor));
+    item.appendChild(data); lista.appendChild(item);
+  });
+  contenedor.appendChild(lista);
+}
+
+function renderizarArchivos(contenedor) {
+  contenedor.appendChild(crearElemento("div", "slide__index", "05 / Archivos"));
+  contenedor.appendChild(crearElemento("h1", "", "Ideas y briefs, en un solo lugar."));
+  contenedor.appendChild(crearElemento("p", "slide__intro", "Carga referencias para que producto y desarrollo trabajen con contexto."));
+  const form = crearElemento("form", "file-upload");
+  const fileInput = document.createElement("input"); fileInput.type = "file"; fileInput.name = "file"; fileInput.required = true;
+  const titleInput = document.createElement("input"); titleInput.name = "title"; titleInput.placeholder = "Nombre del brief o idea"; titleInput.required = true;
+  const upload = crearElemento("button", "btn btn--primary", "Cargar archivo"); upload.type = "submit";
+  form.appendChild(titleInput); form.appendChild(fileInput); form.appendChild(upload);
+  const message = crearElemento("p", "mensaje", "Los archivos se guardan en este navegador.");
+  form.addEventListener("submit", (evento) => {
+    evento.preventDefault(); const archivo = fileInput.files?.[0]; if (!archivo) return;
+    const reader = new FileReader(); reader.addEventListener("load", () => { archivos.unshift({ id: Date.now(), title: titleInput.value.trim(), name: archivo.name, size: archivo.size, type: archivo.type, data: reader.result, autor: usuarioActual.nombre, fecha: new Date().toLocaleDateString() }); guardarColeccion(FILES_KEY, archivos); renderizar(); }); reader.readAsDataURL(archivo);
+  });
+  contenedor.appendChild(form); contenedor.appendChild(message);
+  const list = crearElemento("div", "file-list"); list.appendChild(crearElemento("h2", "lista__title", "Biblioteca de trabajo"));
+  archivos.forEach((archivo) => {
+    const item = crearElemento("article", "file-item");
+    item.appendChild(crearElemento("span", "file-item__icon", archivo.type === "application/pdf" ? "PDF" : "MD"));
+    const copy = crearElemento("div", "file-item__copy");
+    copy.appendChild(crearElemento("strong", "", archivo.title));
+    copy.appendChild(crearElemento("span", "", `${archivo.name} · ${Math.ceil(archivo.size / 1024)} KB · ${archivo.autor}`));
+    item.appendChild(copy);
+    const view = crearElemento("button", "btn btn--secondary", "Ver");
+    view.type = "button";
+    view.addEventListener("click", () => mostrarArchivo(archivo));
+    item.appendChild(view);
+    const link = crearElemento("a", "btn btn--secondary", "Descargar");
+    link.href = archivo.data; link.download = archivo.name; link.target = "_blank";
+    item.appendChild(link); list.appendChild(item);
+  });
+  contenedor.appendChild(list);
+}
+
+function mostrarArchivo(archivo) {
+  const overlay = crearElemento("div", "file-viewer");
+  const viewer = crearElemento("section", "file-viewer__panel");
+  const header = crearElemento("header", "file-viewer__header");
+  header.appendChild(crearElemento("strong", "", archivo.title));
+  const close = crearElemento("button", "file-viewer__close", "Cerrar");
+  close.type = "button"; close.addEventListener("click", () => overlay.remove());
+  header.appendChild(close); viewer.appendChild(header);
+  if (archivo.type === "application/pdf" || archivo.name.toLowerCase().endsWith(".pdf")) {
+    const frame = document.createElement("iframe"); frame.src = archivo.data; frame.title = archivo.title; viewer.appendChild(frame);
+  } else {
+    const pre = crearElemento("pre", "file-viewer__markdown");
+    fetch(archivo.data).then((respuesta) => respuesta.text()).then((texto) => { pre.textContent = texto; }).catch(() => { pre.textContent = "No se pudo leer este archivo."; });
+    viewer.appendChild(pre);
+  }
+  overlay.appendChild(viewer); overlay.addEventListener("click", (evento) => { if (evento.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
 function renderizarChat(contenedor) {
