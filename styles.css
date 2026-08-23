@@ -182,7 +182,9 @@ input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
 .shell--collapsed .brand__name, .shell--collapsed .sidebar__eyebrow, .shell--collapsed .nav__label, .shell--collapsed .sidebar__status { display: none; }
 .shell--collapsed .nav__item { justify-content: center; padding-left: 0; padding-right: 0; }
 .shell--collapsed .nav__number { width: auto; }
-.sidebar-toggle { padding: 8px 10px; border: 0; border-radius: 6px; color: var(--blue-dark); background: var(--blue-soft); font-size: .75rem; font-weight: 700; }
+.sidebar-toggle { width: 100%; margin-bottom: 22px; padding: 9px 10px; border: 0; border-radius: 6px; color: var(--blue-dark); background: var(--blue-soft); font-size: .75rem; font-weight: 700; }
+.shell--collapsed .sidebar-toggle { width: 46px; align-self: center; padding: 9px 4px; font-size: 0; }
+.shell--collapsed .sidebar-toggle::after { content: ">"; font-size: .9rem; font-weight: 700; }
 .cliente__acciones .btn { white-space: nowrap; }
 
 @media (min-width: 1200px) {
@@ -205,6 +207,9 @@ input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
 @media (max-width: 620px) {
   .sidebar { position: static; height: auto; padding: 14px 14px 10px; }
   .brand { margin-bottom: 14px; }
+  .sidebar-toggle { width: auto; margin: 0 0 12px; }
+  .shell--collapsed .sidebar-toggle { width: auto; padding: 7px 10px; font-size: .75rem; }
+  .shell--collapsed .sidebar-toggle::after { content: none; }
   .nav { gap: 5px; padding-bottom: 3px; scrollbar-width: thin; }
   .nav__item { min-width: 108px; min-height: 44px; padding: 10px; }
   .nav__number { width: 18px; }

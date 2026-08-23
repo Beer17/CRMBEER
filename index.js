@@ -455,6 +455,11 @@ function renderizarCRM2() {
   brand.appendChild(crearElemento("span", "brand__mark", "S"));
   brand.appendChild(crearElemento("span", "brand__name", "Salesboard"));
   sidebar.appendChild(brand);
+  const toggleSidebar = crearElemento("button", "sidebar-toggle", sidebarColapsado ? "Mostrar menú" : "Ocultar menú");
+  toggleSidebar.type = "button";
+  toggleSidebar.title = toggleSidebar.textContent;
+  toggleSidebar.addEventListener("click", () => { sidebarColapsado = !sidebarColapsado; renderizar(); });
+  sidebar.appendChild(toggleSidebar);
   sidebar.appendChild(crearElemento("p", "sidebar__eyebrow", "Espacio de trabajo"));
 
   const navegacion = crearElemento("nav", "nav");
@@ -484,11 +489,6 @@ function renderizarCRM2() {
   toolbarCopy.appendChild(crearElemento("strong", "toolbar__title", `Buenos días, ${usuarioActual.nombre}`));
   toolbar.appendChild(toolbarCopy);
   const acciones = crearElemento("div", "toolbar__actions");
-  const toggleSidebar = crearElemento("button", "sidebar-toggle", sidebarColapsado ? "Mostrar menú" : "Ocultar menú");
-  toggleSidebar.type = "button";
-  toggleSidebar.title = toggleSidebar.textContent;
-  toggleSidebar.addEventListener("click", () => { sidebarColapsado = !sidebarColapsado; renderizar(); });
-  acciones.appendChild(toggleSidebar);
   const avatar = crearElemento("button", "avatar", usuarioActual.nombre.charAt(0).toUpperCase());
   avatar.type = "button";
   avatar.title = "Abrir mi perfil";
