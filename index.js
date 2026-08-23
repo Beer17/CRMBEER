@@ -135,6 +135,7 @@ let clienteEditandoId = null;
 let modoRegistro = false;
 
 let slideActual = "resumen";
+let sidebarColapsado = false;
 
 function aplicarApariencia() {
   const apariencia = usuarioActual?.appearance || {};
@@ -448,7 +449,7 @@ function renderizarCRM() {
 
 function renderizarCRM2() {
   if (["users", "config"].includes(slideActual) && usuarioActual.role !== "admin") slideActual = "perfil";
-  const panel = crearElemento("section", "shell");
+  const panel = crearElemento("section", `shell${sidebarColapsado ? " shell--collapsed" : ""}`);
   const sidebar = crearElemento("aside", "sidebar");
   const brand = crearElemento("div", "brand");
   brand.appendChild(crearElemento("span", "brand__mark", "S"));
@@ -483,6 +484,11 @@ function renderizarCRM2() {
   toolbarCopy.appendChild(crearElemento("strong", "toolbar__title", `Buenos días, ${usuarioActual.nombre}`));
   toolbar.appendChild(toolbarCopy);
   const acciones = crearElemento("div", "toolbar__actions");
+  const toggleSidebar = crearElemento("button", "sidebar-toggle", sidebarColapsado ? "Mostrar menú" : "Ocultar menú");
+  toggleSidebar.type = "button";
+  toggleSidebar.title = toggleSidebar.textContent;
+  toggleSidebar.addEventListener("click", () => { sidebarColapsado = !sidebarColapsado; renderizar(); });
+  acciones.appendChild(toggleSidebar);
   const avatar = crearElemento("button", "avatar", usuarioActual.nombre.charAt(0).toUpperCase());
   avatar.type = "button";
   avatar.title = "Abrir mi perfil";
