@@ -5,6 +5,7 @@ const contenedorApp = document.getElementById("app");
 const STORAGE_KEY = "crm_usuarios";
 const SESSION_KEY = "crm_sesion";
 const CLIENTES_KEY = "crm_clientes";
+const WHATSAPP_CONFIG_KEY = "crm_whatsapp_config";
 
 // Carga los usuarios desde el almacenamiento local
 function cargarUsuarios() {
@@ -84,6 +85,18 @@ function guardarClientes() {
   localStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
 }
 
+function cargarConfigWhatsApp() {
+  try {
+    return JSON.parse(localStorage.getItem(WHATSAPP_CONFIG_KEY)) || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function guardarConfigWhatsApp(configuracion) {
+  localStorage.setItem(WHATSAPP_CONFIG_KEY, JSON.stringify(configuracion));
+}
+
 // Usuarios disponibles para login y registro
 const usuarios = cargarUsuarios();
 usuarios.forEach((usuario) => {
@@ -98,6 +111,7 @@ if (usuarioActual && !usuarioActual.role) {
 
 // Lista de clientes del CRM
 let clientes = cargarClientes();
+let configuracionWhatsApp = cargarConfigWhatsApp();
 
 // Guarda el ID del cliente que se está editando
 let clienteEditandoId = null;
@@ -418,7 +432,7 @@ function renderizarCRM() {
 }
 
 function renderizarCRM2() {
-  if (slideActual === "users" && usuarioActual.role !== "admin") slideActual = "perfil";
+  if (["users", "config"].includes(slideActual) && usuarioActual.role !== "admin") slideActual = "perfil";
   const panel = crearElemento("section", "shell");
   const sidebar = crearElemento("aside", "sidebar");
   const brand = crearElemento("div", "brand");
@@ -430,7 +444,8 @@ function renderizarCRM2() {
   const navegacion = crearElemento("nav", "nav");
   const itemsNavegacion = [["resumen", "Resumen", "01"], ["clientes", "Clientes", String(clientes.length).padStart(2, "0")]];
   if (usuarioActual.role === "admin") itemsNavegacion.push(["users", "Users", "03"]);
-  itemsNavegacion.push(["perfil", "Mi perfil", "04"]);
+  if (usuarioActual.role === "admin") itemsNavegacion.push(["config", "Config", "04"]);
+  itemsNavegacion.push(["perfil", "Mi perfil", usuarioActual.role === "admin" ? "05" : "04"]);
   itemsNavegacion.forEach(([id, texto, numero]) => {
     const boton = crearElemento("button", `nav__item${slideActual === id ? " nav__item--active" : ""}`);
     boton.type = "button";
@@ -520,6 +535,8 @@ function renderizarCRM2() {
     slide.appendChild(resumenGrid);
   } else if (slideActual === "users" && usuarioActual.role === "admin") {
     renderizarUsuarios(slide);
+  } else if (slideActual === "config" && usuarioActual.role === "admin") {
+    renderizarConfiguracion(slide);
   } else if (slideActual === "perfil") {
     slide.appendChild(crearElemento("div", "slide__index", "04 / Mi perfil"));
     slide.appendChild(crearElemento("h1", "", "Tu perfil comercial."));
@@ -768,6 +785,41 @@ function renderizarUsuarios(contenedor) {
   button.type = "submit"; form.appendChild(button);
   form.addEventListener("submit", (evento) => manejarCrearPerfil(evento, mensaje));
   teamSection.appendChild(form); teamSection.appendChild(mensaje); contenedor.appendChild(teamSection);
+}
+
+function renderizarConfiguracion(contenedor) {
+  contenedor.appendChild(crearElemento("div", "slide__index", "04 / Config"));
+  contenedor.appendChild(crearElemento("h1", "", "Conecta tu operación."));
+  contenedor.appendChild(crearElemento("p", "slide__intro", "Configura WhatsApp Business para preparar tus conversaciones comerciales."));
+  const panel = crearElemento("section", "config-card");
+  panel.appendChild(crearElemento("span", "config-card__brand", "WhatsApp Business API"));
+  panel.appendChild(crearElemento("h2", "", "Datos de conexión"));
+  const aviso = crearElemento("p", "config-card__notice", "El token debe guardarse en un backend seguro antes de activar envíos reales.");
+  panel.appendChild(aviso);
+  const form = crearElemento("form", "formulario config-form");
+  [["URL del backend", "apiUrl", "url", "https://tu-backend.com/api/whatsapp"], ["ID del número", "phoneNumberId", "text", "Phone Number ID de Meta"], ["Token de acceso", "accessToken", "password", "Token permanente de Meta"], ["ID de cuenta WhatsApp", "businessAccountId", "text", "WABA ID (opcional)"]].forEach(([labelText, name, type, placeholder]) => {
+    const field = crearElemento("div", "campo");
+    field.appendChild(crearElemento("label", "campo__label", labelText));
+    const input = document.createElement("input");
+    input.name = name; input.type = type; input.placeholder = placeholder; input.value = configuracionWhatsApp[name] || "";
+    field.appendChild(input); form.appendChild(field);
+  });
+  const enabledField = crearElemento("label", "config-toggle");
+  const enabled = document.createElement("input");
+  enabled.type = "checkbox"; enabled.name = "enabled"; enabled.checked = configuracionWhatsApp.enabled === true;
+  enabledField.appendChild(enabled); enabledField.appendChild(crearElemento("span", "", "Activar integración cuando el backend esté listo"));
+  form.appendChild(enabledField);
+  const save = crearElemento("button", "btn btn--primary config-form__button", "Guardar configuración");
+  save.type = "submit"; form.appendChild(save);
+  const message = crearElemento("p", "mensaje", "");
+  form.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+    const datos = new FormData(form);
+    configuracionWhatsApp = { apiUrl: datos.get("apiUrl").toString().trim(), phoneNumberId: datos.get("phoneNumberId").toString().trim(), accessToken: datos.get("accessToken").toString().trim(), businessAccountId: datos.get("businessAccountId").toString().trim(), enabled: enabled.checked };
+    guardarConfigWhatsApp(configuracionWhatsApp);
+    message.textContent = "Configuración guardada en este dispositivo.";
+  });
+  panel.appendChild(form); panel.appendChild(message); contenedor.appendChild(panel);
 }
 
 function actualizarApariencia(cambios) {

@@ -137,6 +137,14 @@ input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
 .team-member__remove:hover { background: #ffe0e4; }
 .team-member__edit { padding: 5px 8px; border: 0; border-radius: 5px; color: var(--blue-dark); background: var(--blue-soft); font-size: .7rem; font-weight: 700; }
 .team-form { margin: 0; padding: 18px; border: 1px solid var(--line); border-radius: 7px; background: #f8fbff; }
+.config-card { max-width: 760px; margin-top: 28px; padding: 25px; border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 2px 8px rgba(35,49,72,.035); }
+.config-card__brand { color: #1c9b5c; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.config-card h2 { margin: 10px 0 7px; font-size: 1.25rem; }
+.config-card__notice { padding: 11px 13px; border-left: 3px solid #f0b44d; color: #816027; background: #fff8e9; font-size: .82rem; }
+.config-form { margin-bottom: 0; }
+.config-toggle { display: flex; align-items: center; gap: 9px; grid-column: 1 / -1; color: var(--ink); font-size: .82rem; font-weight: 600; }
+.config-toggle input { width: 17px; height: 17px; accent-color: var(--blue); }
+.config-form__button { grid-column: 1 / -1; justify-self: start; }
 .team-form__title { grid-column: 1 / -1; }
 .team-form__button { grid-column: 1 / -1; justify-self: start; }
 @keyframes appear { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
