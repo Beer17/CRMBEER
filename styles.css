@@ -108,6 +108,9 @@ input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
 .lista__title { margin: 0 0 8px; font-size: 1.1rem; }
 .cliente { display: flex; justify-content: space-between; gap: 18px; padding: 17px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .cliente__info { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.stage-select { width: fit-content; padding: 5px 8px; border-color: #c9dcf3; border-radius: 5px; color: var(--blue-dark); background: var(--blue-soft); font-size: .72rem; font-weight: 700; }
+.conversation__title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.stage-select--chat { flex: 0 0 auto; }
 .cliente__nombre { font: 700 1rem "Space Grotesk", sans-serif; } .cliente__meta { color: var(--muted); font-size: .84rem; }
 .cliente__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .tag, .badge { display: inline-flex; width: fit-content; border-radius: 999px; padding: 4px 8px; font-size: .72rem; font-weight: 700; }

@@ -181,6 +181,18 @@ function etiquetaRol(role) {
   return { admin: "Admin", seller: "Vendedor", rh: "RH", compras: "Compras" }[role] || "Vendedor";
 }
 
+function etiquetaEtapa(etapa) {
+  return { lead: "Lead", comprador: "Comprador", frecuente: "Comprador frecuente" }[etapa] || "Lead";
+}
+
+function cambiarEtapaCliente(id, etapa) {
+  const cliente = clientes.find((actual) => actual.id === id);
+  if (!cliente) return;
+  cliente.etapa = ["lead", "comprador", "frecuente"].includes(etapa) ? etapa : "lead";
+  guardarClientes();
+  renderizar();
+}
+
 // Dibuja la interfaz según si hay sesión activa o no
 function renderizar() {
   contenedorApp.innerHTML = "";
@@ -741,6 +753,13 @@ function renderizarCRM2() {
       cliente.etiquetas.forEach((etiqueta) => etiquetas.appendChild(crearElemento("span", "tag", etiqueta)));
       info.appendChild(etiquetas);
       info.appendChild(crearElemento("span", `badge badge--${cliente.estatus}`, cliente.estatus));
+      const etapa = document.createElement("select");
+      etapa.className = "stage-select";
+      [["lead", "Lead"], ["comprador", "Comprador"], ["frecuente", "Comprador frecuente"]].forEach(([value, text]) => { const option = document.createElement("option"); option.value = value; option.textContent = text; etapa.appendChild(option); });
+      etapa.value = cliente.etapa || "lead";
+      etapa.title = "Cambiar etapa comercial";
+      etapa.addEventListener("change", () => cambiarEtapaCliente(cliente.id, etapa.value));
+      info.appendChild(etapa);
       item.appendChild(info);
       const accionesCliente = crearElemento("div", "cliente__acciones");
       const botonIA = crearElemento("button", "btn btn--secondary", cliente.ai ? "Revisar IA" : "Analizar IA");
@@ -984,7 +1003,16 @@ function renderizarChat(contenedor) {
     conversation.appendChild(crearElemento("p", "mensaje", "Añade un cliente para comenzar una conversación."));
   } else {
     const conversationHeader = crearElemento("header", "conversation__header");
-    conversationHeader.appendChild(crearElemento("strong", "", cliente.nombre));
+    const conversationTitle = crearElemento("div", "conversation__title");
+    conversationTitle.appendChild(crearElemento("strong", "", cliente.nombre));
+    const chatStage = document.createElement("select");
+    chatStage.className = "stage-select stage-select--chat";
+    [["lead", "Lead"], ["comprador", "Comprador"], ["frecuente", "Comprador frecuente"]].forEach(([value, text]) => { const option = document.createElement("option"); option.value = value; option.textContent = text; chatStage.appendChild(option); });
+    chatStage.value = cliente.etapa || "lead";
+    chatStage.title = "Cambiar etapa comercial";
+    chatStage.addEventListener("change", () => cambiarEtapaCliente(cliente.id, chatStage.value));
+    conversationTitle.appendChild(chatStage);
+    conversationHeader.appendChild(conversationTitle);
     conversationHeader.appendChild(crearElemento("span", "", `${cliente.empresa} · WhatsApp`));
     conversation.appendChild(conversationHeader);
     const messages = crearElemento("div", "messages");
